@@ -30,11 +30,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		2A2018E22DD3D9C20010192F /* BeProd */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BeProd;
-			sourceTree = "<group>";
-		};
 		2A2018F02DD3D9C30010192F /* BeProdTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BeProdTests;
@@ -43,6 +38,11 @@
 		2A2018FA2DD3D9C30010192F /* BeProdUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BeProdUITests;
+			sourceTree = "<group>";
+		};
+		2A2019552DD7D5200010192F /* BeProd */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BeProd;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,7 +75,7 @@
 		2A2018D72DD3D9C20010192F = {
 			isa = PBXGroup;
 			children = (
-				2A2018E22DD3D9C20010192F /* BeProd */,
+				2A2019552DD7D5200010192F /* BeProd */,
 				2A2018F02DD3D9C30010192F /* BeProdTests */,
 				2A2018FA2DD3D9C30010192F /* BeProdUITests */,
 				2A2018E12DD3D9C20010192F /* Products */,
@@ -108,7 +108,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				2A2018E22DD3D9C20010192F /* BeProd */,
+				2A2019552DD7D5200010192F /* BeProd */,
 			);
 			name = BeProd;
 			packageProductDependencies = (
