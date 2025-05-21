@@ -6,12 +6,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct BeProdApp: App {
     var body: some Scene {
         WindowGroup {
-            MainTabView()
-        }
+           let container = try! ModelContainer(for: UserTask.self)
+           let viewModel = TasksViewModel(context: container.mainContext)
+           
+           MainTabView()
+               .modelContainer(container)
+               .environmentObject(viewModel)
+       }
     }
 }

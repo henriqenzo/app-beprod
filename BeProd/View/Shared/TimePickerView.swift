@@ -51,10 +51,6 @@ struct TimePickerView: View {
 }
 
 #Preview {
-    // Cria uma instância mock do ViewModel para o preview
-        let mockViewModel = TasksViewModel()
+   TimePickerView()
         
-        // Injeta o ViewModel na hierarquia do preview
-        return TimePickerView()
-            .environmentObject(mockViewModel)
 }

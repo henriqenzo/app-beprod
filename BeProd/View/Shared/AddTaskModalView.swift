@@ -11,6 +11,7 @@ struct AddTaskModalView: View {
     
     // Usa o mesmo ViewModel
     @EnvironmentObject var viewModel: TasksViewModel
+    @Environment(\.dismiss) var dismiss
     
     var durationFormatted: String {
         let hours = viewModel.newTaskDurationHours
@@ -36,6 +37,7 @@ struct AddTaskModalView: View {
             HStack {
                 Button(action: {
                     viewModel.showingAddTaskModal = false
+                    viewModel.resetEditingState()
                 }) {
                     Text("Cancelar").foregroundStyle(Color("Primary"))
                 }
@@ -47,7 +49,7 @@ struct AddTaskModalView: View {
                 Spacer()
                 
                 Button(action: {
-                    viewModel.addTask()
+                    viewModel.addOrEditTask()
                     
                 }) {
                     Text("Salvar").foregroundStyle(Color("Primary")).fontWeight(.semibold)
@@ -116,15 +118,17 @@ struct AddTaskModalView: View {
         .padding(.horizontal)
         .padding(.top, 16)
         .background(Color("Gray4"))
+        .onDisappear {
+            // Garante que o estado seja resetado se a modal for fechada pelo gesto
+            if viewModel.isEditing {
+                viewModel.resetEditingState()
+            }
+        }
         
     }
+    
 }
 
 #Preview {
-    // Cria uma instância mock do ViewModel para o preview
-        let mockViewModel = TasksViewModel()
-        
-        // Injeta o ViewModel na hierarquia do preview
-        return AddTaskModalView()
-            .environmentObject(mockViewModel)
+    AddTaskModalView()
 }

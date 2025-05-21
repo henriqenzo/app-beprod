@@ -1,13 +1,12 @@
 
 
 import SwiftUI
+import SwiftData
 
 struct TasksView: View {
         
     // Instância do ViewModel (gerencia o estado)
-    @StateObject var viewModel = TasksViewModel()
-    
-    @State var selected = 0
+    @EnvironmentObject var viewModel: TasksViewModel
     
     var body: some View {
         
@@ -16,13 +15,14 @@ struct TasksView: View {
             
             VStack(spacing: 0) {
                 
-                HeaderTasksView(selected: $selected)
+                HeaderTasksView()
                     .environmentObject(viewModel)
                 
-                if selected == 0 {
+                if viewModel.segmentSelected == 0 {
                     RoutineTasksView()
                         .environmentObject(viewModel)
-                } else {
+                }
+                else {
                     EventualTasksView()
                         .environmentObject(viewModel)
                 }
@@ -35,5 +35,18 @@ struct TasksView: View {
 }
 
 #Preview {
-    TasksView()
+    struct PreviewWrapper: View {
+        var body: some View {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let viewModel = TasksViewModel(context: container.mainContext)
+
+            return TasksView()
+                .modelContainer(container)
+                .environmentObject(viewModel)
+        }
+    }
+
+    return PreviewWrapper()
 }
+

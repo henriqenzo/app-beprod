@@ -1,10 +1,14 @@
 
 import SwiftUI
+import SwiftData
 
 struct RoutineTasksView: View {
     
-    // Usa o mesmo ViewModel
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \UserTask.sortIndex) private var tasks: [UserTask]
+        
     @EnvironmentObject var viewModel: TasksViewModel
+    @State var isInEventualView = false
     
     var body: some View {
         
@@ -13,19 +17,19 @@ struct RoutineTasksView: View {
             
             VStack {
                 
-                if viewModel.tasks.isEmpty {
-                    Spacer()
-                        .frame(height: 170)
-                    Text("Você ainda não possui tarefas...").font(.body).foregroundStyle(Color("Gray"))
-                } else {
+                    if tasks.isEmpty {
+                        Spacer()
+                            .frame(height: 170)
+                        Text("Você ainda não possui tarefas...").font(.body).foregroundStyle(Color("Gray"))
+                    } else {
                     
                     List {
-                        ForEach($viewModel.tasks) { $task in
+                        ForEach(tasks) { task in
                             // Renderiza cada tarefa
-                            TaskRowView(task: $task)
+                            TaskRowView(task: task, isInEventualView: $isInEventualView)
                                 .swipeActions(edge: .trailing) {
                                     Button(role: .destructive) {
-                                        viewModel.deleteTask(withId: task.id)
+                                        viewModel.deleteTask(task)
                                     } label: {
                                         Image(systemName: "trash.fill")
                                     }
@@ -38,7 +42,9 @@ struct RoutineTasksView: View {
                                     }
                                     .tint(.gray)
                                 }
-                            
+                        }
+                        .onMove { indices, newOffset in
+                            viewModel.moveTask(tasks, from: indices, to: newOffset)
                         }
                         .scrollContentBackground(.hidden)
                         .listRowBackground(Color.clear)
@@ -55,13 +61,16 @@ struct RoutineTasksView: View {
         }
         
     }
+    
+    private func addTask() {
+        withAnimation {
+            let newTask = UserTask(title: "Nova Tarefa")
+            modelContext.insert(newTask)
+        }
+    }
 }
 
 #Preview {
-    // Cria uma instância mock do ViewModel para o preview
-        let mockViewModel = TasksViewModel()
-        
-        // Injeta o ViewModel na hierarquia do preview
-        return RoutineTasksView()
-            .environmentObject(mockViewModel)
+    RoutineTasksView()
+        .modelContainer(for: UserTask.self, inMemory: true)
 }

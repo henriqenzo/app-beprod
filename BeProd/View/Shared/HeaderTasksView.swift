@@ -6,16 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct HeaderTasksView: View {
     
     // Usa o mesmo ViewModel
     @EnvironmentObject var viewModel: TasksViewModel
     
-    @Binding var selected: Int
-    
-    init(selected: Binding<Int>) {
-        self._selected = selected
+    init() {
         // Customização do segmented control
         UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(Color("Primary"))
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
@@ -34,7 +32,7 @@ struct HeaderTasksView: View {
                     
                     VStack(alignment: .leading, spacing: 24) {
                         HStack {
-                            Picker(selection: $selected, label: /*@START_MENU_TOKEN@*/Text("Picker")/*@END_MENU_TOKEN@*/) {
+                            Picker(selection: $viewModel.segmentSelected, label: Text("Picker")) {
                                 Text("Cotidianas").font(.largeTitle).tag(0)
                                 Text("Eventuais").tag(1)
                             }
@@ -45,7 +43,7 @@ struct HeaderTasksView: View {
                             Spacer()
                             
                             Button(action: {
-                                viewModel.showingAddTaskModal = true
+                                viewModel.prepareForNewTask()
                             }) {
                                 Image(systemName: "plus")
                                     .font(.system(size: 24))
@@ -54,9 +52,16 @@ struct HeaderTasksView: View {
                             
                             
                         }
-                        Text("02 mai. | Sexta-feira")
-                            .font(.headline)
-                            .foregroundStyle(Color("LightGray"))
+                        
+                        if viewModel.segmentSelected == 0 {
+                            Text(Date().formattedHeaderDate())
+                                .font(.headline)
+                                .foregroundStyle(Color("LightGray"))
+                        }
+                        
+                        if viewModel.segmentSelected == 1 {
+                            WeekDatePickerView()
+                        }
                         
                     }
                     
@@ -81,14 +86,16 @@ struct HeaderTasksView: View {
 
 #Preview {
     struct PreviewWrapper: View {
-        @State private var selected = 0
-        let mockViewModel = TasksViewModel()
-        
         var body: some View {
-            HeaderTasksView(selected: $selected)
-                .environmentObject(mockViewModel)
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let viewModel = TasksViewModel(context: container.mainContext)
+
+            return HeaderTasksView()
+                .modelContainer(container)
+                .environmentObject(viewModel)
         }
     }
-    
+
     return PreviewWrapper()
 }

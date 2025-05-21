@@ -7,13 +7,28 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 
+@MainActor
 class TasksViewModel: ObservableObject {
     
-    @Published var tasks: [UserTask] = []
+    private var modelContext: ModelContext
+        
+    init(context: ModelContext) {
+        self.modelContext = context
+    }
     
-    @Published var showingAddTaskModal = false
+    @Published var segmentSelected = 0
     @Published var showingTimePicker = false
+    
+    @Published var showingAddTaskModal = false {
+       didSet {
+           if !showingAddTaskModal {
+               // Sempre que a modal é fechada (de qualquer maneira), reseta o estado de edição
+               resetEditingState()
+           }
+       }
+    }
     
     // Propriedades do formulário
     @Published var newTaskTitle = ""
@@ -24,67 +39,67 @@ class TasksViewModel: ObservableObject {
     
     // Propriedades de edição
     @Published var isEditing = false
-    @Published var editingTaskId: UUID?
-        
-    // Função criar tarefa
-    func addTask() {
-        
-        // Validação: título não pode estar vazio
-        guard !newTaskTitle.isEmpty else { return }
-        
-        if isEditing, let taskId = editingTaskId {
-            if let index = tasks.firstIndex(where: { $0.id == taskId }) {
-                tasks[index] = UserTask(
-                    id: taskId, // Mantém o mesmo ID
-                    title: newTaskTitle,
-                    durationHours: showingTimePicker ? newTaskDurationHours : 0,
-                    durationMinutes: showingTimePicker ? newTaskDurationMinutes : 0,
-                    priority: newTaskPriority,
-                    completed: tasks[index].completed // Mantém o status de completado
-                )
-            }
-        } else {
-            // Cria nova task com os dados do formulário
-            let newTask = UserTask(
-                title: newTaskTitle,
-                durationHours: showingTimePicker ? newTaskDurationHours : 0,
-                durationMinutes: showingTimePicker ? newTaskDurationMinutes : 0,
-                priority: newTaskPriority,
-                completed: completed
-            )
-            
-            // Adiciona nova task no array
-            tasks.append(newTask)
-            print(tasks)
-        }
-        
-        // Limpa formulário
-        clearForm()
-        
-        // Fecha modal
-        showingAddTaskModal = false
-    }
+    @Published var editingTask: UserTask?
     
-    // Função remover tarefa pelo id
-    func deleteTask(withId id: UUID) {
-        withAnimation {
-            tasks.removeAll { $0.id == id }
-        }
-        print(tasks)
+    
+        
+    // Função para preparar nova tarefa
+    func prepareForNewTask() {
+        resetEditingState()
+        showingTimePicker = false
+        showingAddTaskModal = true
     }
     
     // Função prepara para editar tarefa
     func prepareForEdit(task: UserTask) {
         isEditing = true
+        editingTask = task
         
-        editingTaskId = task.id
-    
         newTaskTitle = task.title
         newTaskDurationHours = task.durationHours
         newTaskDurationMinutes = task.durationMinutes
         newTaskPriority = task.priority
-        // Abre a modal
-        showingAddTaskModal = true
+        
+        showingTimePicker = task.hasDuration // Define o estado baseado na tarefa
+        showingAddTaskModal = true // Abre Modal
+    }
+    
+    // Função cria tarefa
+    func addOrEditTask() {
+        guard !newTaskTitle.isEmpty else { return }
+        
+        if isEditing, let taskToEdit = editingTask {
+            taskToEdit.title = newTaskTitle
+            taskToEdit.durationHours = showingTimePicker ? newTaskDurationHours : 0
+            taskToEdit.durationMinutes = showingTimePicker ? newTaskDurationMinutes : 0
+            taskToEdit.priority = newTaskPriority
+            taskToEdit.completed = completed
+            // Não precisa inserir novamente, já está no contexto
+        } else {
+            let newTask = UserTask(
+                title: newTaskTitle,
+                durationHours: showingTimePicker ? newTaskDurationHours : 0,
+                durationMinutes: showingTimePicker ? newTaskDurationMinutes : 0,
+                priority: newTaskPriority,
+                completed: completed,
+                isEventual: segmentSelected == 1
+            )
+            modelContext.insert(newTask)
+        }
+
+        // Tenta salvar
+        try? modelContext.save()
+
+        clearForm()
+        showingAddTaskModal = false
+    }
+
+    // Função remover tarefa pelo id
+    func deleteTask(_ task: UserTask) {
+        withAnimation {
+            modelContext.delete(task)
+            try? modelContext.save()
+        }
     }
     
     // Função limpa os campos do formulário
@@ -93,8 +108,26 @@ class TasksViewModel: ObservableObject {
         newTaskDurationHours = 0
         newTaskDurationMinutes = 0
         newTaskPriority = "Nenhuma"
-        editingTaskId = nil
         completed = false
+    }
+    
+    // Função ordena as tasks na lista
+    func moveTask(_ tasks: [UserTask], from source: IndexSet, to destination: Int) {
+        var updatedTasks = tasks
+        updatedTasks.move(fromOffsets: source, toOffset: destination)
+
+        for (index, task) in updatedTasks.enumerated() {
+            task.sortIndex = index
+        }
+
+        try? modelContext.save()
+    }
+    
+    // Função reseta estado de edição
+    func resetEditingState() {
+        isEditing = false
+        editingTask = nil
+        clearForm()
     }
     
 }

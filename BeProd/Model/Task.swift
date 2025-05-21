@@ -6,23 +6,32 @@
 //
 
 import Foundation
+import SwiftData
 
-struct UserTask: Identifiable, Codable {
-    let id: UUID
+@Model
+final class UserTask {
+    var id: UUID
     var title: String
     var durationHours: Int
     var durationMinutes: Int
     var priority: String
     var completed: Bool
+    var isEventual: Bool
+    var hasDuration: Bool {
+        durationHours > 0 || durationMinutes > 0
+    }
+    var sortIndex: Int // <- NOVO
     
     // Inicializador com valores padrão
-    init(id: UUID = UUID(), title: String, durationHours: Int = 0, durationMinutes: Int = 0, priority: String = "Nenhuma", completed: Bool = false) {
+    init(id: UUID = UUID(), title: String, durationHours: Int = 0, durationMinutes: Int = 0, priority: String = "Nenhuma", completed: Bool = false, isEventual: Bool = false, sortIndex: Int = 0) {
         self.id = id
         self.title = title
         self.durationHours = durationHours
         self.durationMinutes = durationMinutes
         self.priority = priority
         self.completed = completed
+        self.isEventual = isEventual
+        self.sortIndex = sortIndex
     }
     
 }

@@ -8,7 +8,10 @@
 import SwiftUI
 
 struct TaskRowView: View {
-    @Binding var task: UserTask
+    var task: UserTask
+   @Binding var isInEventualView: Bool
+   
+   @Environment(\.modelContext) private var modelContext
     
     var durationFormatted: String {
         if task.durationHours != 0 && task.durationMinutes == 0 {
@@ -34,14 +37,23 @@ struct TaskRowView: View {
             HStack {
                 HStack(spacing: 12) {
                     Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: task.completed ? .soft : .medium)
+                        generator.prepare()
+                        generator.impactOccurred()
+                        
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
                             task.completed.toggle()
                         }
+                        
+                        try? modelContext.save() // salva a alteração no contexto
                     }) {
-                        Image(systemName: task.completed ? "checkmark.square.fill" : "square").font(.system(size: 26)).foregroundStyle(Color("Gray"))
-                            .rotationEffect(.degrees(task.completed ? 0 : -90))
+                        Image(systemName: task.completed ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 26))
+                            .foregroundStyle(task.isEventual ? Color("Primary") : Color("Gray"))
+                            .rotationEffect(.degrees(task.completed ? 0 : -180))
                             .scaleEffect(task.completed ? 1.0 : 1.1)
                     }
+                    .disabled(isInEventualView)
                     .buttonStyle(PlainButtonStyle()) // <- evita efeitos extras do botão
                     
                     HStack(spacing: 0) {
@@ -71,11 +83,12 @@ struct TaskRowView: View {
 
 #Preview {
     struct PreviewWrapper: View {
-        @State private var task = UserTask(title: "Estudar Swift", durationHours: 1, durationMinutes: 0, priority: "Nenhuma", completed: false
+        @State private var task = UserTask(title: "Estudar Swift", durationHours: 1, durationMinutes: 0, priority: "Nenhuma", completed: false, isEventual: true
         )
+        @State private var isInEventualView = false
 
         var body: some View {
-            TaskRowView(task: $task)
+            TaskRowView(task: task, isInEventualView: $isInEventualView)
         }
     }
     
