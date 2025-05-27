@@ -11,6 +11,7 @@ import SwiftData
 struct CustomCalendarView: View {
     
     @State private var currentDay = Calendar.current.startOfDay(for: Date())
+    @State private var currentMonthDisplayed = Calendar.current.date(from: DateComponents(year: 2025, month: 5, day: 1))!
     
     @Environment(\.modelContext) private var modelContext
     @Query private var history: [DailyHistory]
@@ -24,12 +25,12 @@ struct CustomCalendarView: View {
     }
 
     private var daysInMonth: [Date] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentDay),
+        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonthDisplayed),
               let firstWeekday = calendar.dateComponents([.weekday], from: monthInterval.start).weekday else {
             return []
         }
 
-        let daysCount = calendar.range(of: .day, in: .month, for: currentDay)!.count
+        let daysCount = calendar.range(of: .day, in: .month, for: currentMonthDisplayed)!.count
         var days: [Date] = []
 
         // Preenche espaços vazios antes do primeiro dia
@@ -39,7 +40,7 @@ struct CustomCalendarView: View {
 
         // Preenche dias reais do mês
         for day in 1...daysCount {
-            if let date = calendar.date(bySetting: .day, value: day, of: currentDay) {
+            if let date = calendar.date(bySetting: .day, value: day, of: currentMonthDisplayed) {
                 let dateWithoutTime = calendar.startOfDay(for: date)
                 days.append(dateWithoutTime)
             }
@@ -52,7 +53,7 @@ struct CustomCalendarView: View {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_BR")
         formatter.dateFormat = "LLLL"
-        return formatter.string(from: currentDay).capitalized
+        return formatter.string(from: currentMonthDisplayed).capitalized
     }
     
     private let daysOfWeek = ["D", "S", "T", "Q", "Q", "S", "S"]
@@ -66,7 +67,7 @@ struct CustomCalendarView: View {
                     Text("Mês")
                         .font(.system(size: 14))
                         .foregroundStyle(Color("LightGray"))
-                        .animation(.easeInOut(duration: 0.2), value: currentDay)
+                        .animation(.easeInOut(duration: 0.2), value: currentMonthDisplayed)
                     
                     HStack {
                         Button(action: {
@@ -181,8 +182,8 @@ struct CustomCalendarView: View {
     }
 
     private func changeMonth(by value: Int) {
-        if let newDate = calendar.date(byAdding: .month, value: value, to: currentDay) {
-            currentDay = newDate
+        if let newDate = calendar.date(byAdding: .month, value: value, to: currentMonthDisplayed) {
+            currentMonthDisplayed = newDate
         }
     }
     
