@@ -20,7 +20,7 @@ struct HeaderTasksView: View {
     }
     
     var body: some View {
-        
+            
         ZStack(alignment: .top) {
             
             // Header
@@ -54,13 +54,15 @@ struct HeaderTasksView: View {
                         }
                         
                         if viewModel.segmentSelected == 0 {
-                            Text(Date().formattedHeaderDate())
+                            Text(viewModel.currentDay.formattedHeaderDate())
                                 .font(.headline)
                                 .foregroundStyle(Color("LightGray"))
                         }
                         
                         if viewModel.segmentSelected == 1 {
                             WeekDatePickerView()
+                                .onAppear(perform: resetSelectedDate
+                                )
                         }
                         
                     }
@@ -78,9 +80,12 @@ struct HeaderTasksView: View {
         
         .sheet(isPresented: $viewModel.showingAddTaskModal) {
             AddTaskModalView()
-                .environmentObject(viewModel)
         }
         
+    }
+    
+    func resetSelectedDate() {
+        viewModel.selectedDate = viewModel.currentDay
     }
 }
 

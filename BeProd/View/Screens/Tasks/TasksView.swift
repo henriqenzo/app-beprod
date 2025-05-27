@@ -20,7 +20,7 @@ struct TasksView: View {
                 
                 if viewModel.segmentSelected == 0 {
                     RoutineTasksView()
-                        .environmentObject(viewModel)
+//                        .environmentObject(viewModel)
                 }
                 else {
                     EventualTasksView()

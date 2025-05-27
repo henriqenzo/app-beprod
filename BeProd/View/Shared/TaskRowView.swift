@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TaskRowView: View {
+    
     var task: UserTask
-   @Binding var isInEventualView: Bool
    
-   @Environment(\.modelContext) private var modelContext
+    @Query(sort: \UserTask.sortIndex) private var tasks: [UserTask]
+    
+    @EnvironmentObject var tasksViewModel: TasksViewModel
+    @EnvironmentObject var constancyViewModel: ConstancyViewModel
     
     var durationFormatted: String {
         if task.durationHours != 0 && task.durationMinutes == 0 {
@@ -43,9 +47,10 @@ struct TaskRowView: View {
                         
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
                             task.completed.toggle()
+                            if !task.isEventual {
+                                constancyViewModel.saveHistory(tasks: tasks)
+                            }
                         }
-                        
-                        try? modelContext.save() // salva a alteração no contexto
                     }) {
                         Image(systemName: task.completed ? "checkmark.square.fill" : "square")
                             .font(.system(size: 26))
@@ -53,7 +58,7 @@ struct TaskRowView: View {
                             .rotationEffect(.degrees(task.completed ? 0 : -180))
                             .scaleEffect(task.completed ? 1.0 : 1.1)
                     }
-                    .disabled(isInEventualView)
+                    .disabled(tasksViewModel.segmentSelected == 1)
                     .buttonStyle(PlainButtonStyle()) // <- evita efeitos extras do botão
                     
                     HStack(spacing: 0) {
@@ -67,15 +72,16 @@ struct TaskRowView: View {
                 
                 HStack {
                     Image(systemName: "clock")
-                        .font(.system(size: 22))
+                        .font(.system(size: 20))
                         .foregroundStyle(durationFormatted == "-" ? Color("Gray3") : Color("Gray"))
                     Text("\(durationFormatted)")
                         .foregroundStyle(durationFormatted == "-" ? Color("Gray3") : Color(.label))
-                        .frame(width: 58)
+                        .font(.system(size: 14))
+                        .frame(width: 45)
                 }
                 
             }
-            .padding(.vertical, 16)
+            .frame(height: 60)
             .opacity(task.completed ? 0.4 : 1)
 
     }
@@ -83,12 +89,19 @@ struct TaskRowView: View {
 
 #Preview {
     struct PreviewWrapper: View {
-        @State private var task = UserTask(title: "Estudar Swift", durationHours: 1, durationMinutes: 0, priority: "Nenhuma", completed: false, isEventual: true
+        @State private var task = UserTask(title: "Apresentação trabalho da facul", durationHours: 1, durationMinutes: 50, priority: "Nenhuma", completed: false, isEventual: true
         )
-        @State private var isInEventualView = false
 
         var body: some View {
-            TaskRowView(task: task, isInEventualView: $isInEventualView)
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let tasksViewModel = TasksViewModel(context: container.mainContext)
+            let constancyViewModel = ConstancyViewModel(context: container.mainContext)
+
+            return TaskRowView(task: task)
+                .modelContainer(container)
+                .environmentObject(tasksViewModel)
+                .environmentObject(constancyViewModel)
         }
     }
     

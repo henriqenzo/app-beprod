@@ -6,16 +6,20 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AddTaskModalView: View {
     
-    // Usa o mesmo ViewModel
-    @EnvironmentObject var viewModel: TasksViewModel
+    @Query(sort: \UserTask.sortIndex) private var tasks: [UserTask]
+    
+    @EnvironmentObject var tasksViewModel: TasksViewModel
+    @EnvironmentObject var constancyViewModel: ConstancyViewModel
+    
     @Environment(\.dismiss) var dismiss
     
     var durationFormatted: String {
-        let hours = viewModel.newTaskDurationHours
-        let minutes = viewModel.newTaskDurationMinutes
+        let hours = tasksViewModel.newTaskDurationHours
+        let minutes = tasksViewModel.newTaskDurationMinutes
         
         if hours != 0 && minutes == 0 {
             return "\(hours)h"
@@ -36,21 +40,21 @@ struct AddTaskModalView: View {
         VStack(spacing: 44) {
             HStack {
                 Button(action: {
-                    viewModel.showingAddTaskModal = false
-                    viewModel.resetEditingState()
+                    tasksViewModel.showingAddTaskModal = false
+                    tasksViewModel.resetEditingState()
                 }) {
                     Text("Cancelar").foregroundStyle(Color("Primary"))
                 }
                 
                 Spacer()
                 
-                Text(viewModel.isEditing ? "Editar Tarefa" : "Adicionar Tarefa").font(.headline)
+                Text(tasksViewModel.isEditing ? "Editar Tarefa" : "Adicionar Tarefa").font(.headline)
                 
                 Spacer()
                 
                 Button(action: {
-                    viewModel.addOrEditTask()
-                    
+                    tasksViewModel.addOrEditTask(for: tasksViewModel.selectedDate)
+                    constancyViewModel.saveHistory(tasks: tasks)
                 }) {
                     Text("Salvar").foregroundStyle(Color("Primary")).fontWeight(.semibold)
                 }
@@ -61,7 +65,7 @@ struct AddTaskModalView: View {
                 HStack {
                     Text("Etiqueta").font(.body)
                     Spacer()
-                    TextField("Tarefa", text: $viewModel.newTaskTitle)
+                    TextField("Tarefa", text: $tasksViewModel.newTaskTitle)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 229)
                 }
@@ -74,14 +78,14 @@ struct AddTaskModalView: View {
                 HStack {
                     Text("Prioridade").font(.body)
                     Spacer()
-                    Picker(selection: $viewModel.newTaskPriority, label: EmptyView()) {
+                    Picker(selection: $tasksViewModel.newTaskPriority, label: EmptyView()) {
                         Text("Nenhuma").tag("Nenhuma")
                         Divider()
                         Text("Baixa").tag("Baixa")
                         Text("Média").tag("Média")
                         Text("Alta").tag("Alta")
                     }
-                    .tint(viewModel.newTaskPriority == "Nenhuma" ? Color("Placeholder") : Color.secondary)
+                    .tint(tasksViewModel.newTaskPriority == "Nenhuma" ? Color("Placeholder") : Color.secondary)
                     .frame(height: 22)
                 }
                 .frame(height: 44)
@@ -90,10 +94,10 @@ struct AddTaskModalView: View {
                 Divider().background(Color("Gray2"))
                 
                 HStack {
-                    Toggle(isOn: $viewModel.showingTimePicker) {
+                    Toggle(isOn: $tasksViewModel.showingTimePicker) {
                         Text("Duração").font(.body)
                         
-                        if viewModel.showingTimePicker {
+                        if tasksViewModel.showingTimePicker {
                             Text("\(durationFormatted)").font(.subheadline).foregroundStyle(Color("Primary"))
                         }
                     }
@@ -104,9 +108,8 @@ struct AddTaskModalView: View {
                 
                 Divider().background(Color("Gray2"))
                 
-                if viewModel.showingTimePicker {
+                if tasksViewModel.showingTimePicker {
                     TimePickerView()
-                        .environmentObject(viewModel)
                 }
             }
             .padding(.leading)
@@ -120,8 +123,8 @@ struct AddTaskModalView: View {
         .background(Color("Gray4"))
         .onDisappear {
             // Garante que o estado seja resetado se a modal for fechada pelo gesto
-            if viewModel.isEditing {
-                viewModel.resetEditingState()
+            if tasksViewModel.isEditing {
+                tasksViewModel.resetEditingState()
             }
         }
         
@@ -130,5 +133,19 @@ struct AddTaskModalView: View {
 }
 
 #Preview {
-    AddTaskModalView()
+    struct PreviewWrapper: View {
+        @State private var previewDate = Date()
+
+        var body: some View {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let viewModel = TasksViewModel(context: container.mainContext)
+
+            return AddTaskModalView()
+                .modelContainer(container)
+                .environmentObject(viewModel)
+        }
+    }
+
+    return PreviewWrapper()
 }

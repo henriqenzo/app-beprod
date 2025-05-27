@@ -9,7 +9,6 @@ struct EventualTasksView: View {
     @Query(sort: \UserTask.sortIndex) private var tasks: [UserTask]
     
     @EnvironmentObject var viewModel: TasksViewModel
-    @State var isInEventualView = true
     
     init() {
         // Muda a cor de fundo do item selecionado do segmentedControl
@@ -35,26 +34,33 @@ struct EventualTasksView: View {
                     
                     List {
                         ForEach(tasks) { task in
-                            // Renderiza cada tarefa
-                            TaskRowView(task: task, isInEventualView: $isInEventualView)
-                                .opacity(!task.isEventual ? 0.4 : 1)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: task.isEventual) {
-                                    if task.isEventual {
-                                        Button(role: .destructive) {
-                                            viewModel.deleteTask(task)
-                                        } label: {
-                                            Image(systemName: "trash.fill")
+                            
+                            if task.isEventual {
+                                let createdDateWithoutTime = Calendar.current.startOfDay(for: task.createdDate!)
+                                if createdDateWithoutTime == viewModel.selectedDate {
+                                    // Renderiza a tarefa
+                                    TaskRowView(task: task)
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) {
+                                                viewModel.deleteTask(task)
+                                            } label: {
+                                                Image(systemName: "trash.fill")
+                                            }
+                                            .tint(.red)
+                                            
+                                            Button {
+                                                viewModel.prepareForEdit(task: task)
+                                            } label: {
+                                                Image(systemName: "pencil").font(.system(size: 26))
+                                            }
+                                            .tint(.gray)
                                         }
-                                        .tint(.red)
-                                        
-                                        Button {
-                                            viewModel.prepareForEdit(task: task)
-                                        } label: {
-                                            Image(systemName: "pencil").font(.system(size: 26))
-                                        }
-                                        .tint(.gray)
-                                    }
                                 }
+                            } else {
+                                // Renderiza a tarefa
+                                TaskRowView(task: task)
+                                    .opacity(0.4)
+                            }
                             
                         }
                         .onMove { indices, newOffset in

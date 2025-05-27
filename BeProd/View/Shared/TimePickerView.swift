@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TimePickerView: View {
     
@@ -51,6 +52,17 @@ struct TimePickerView: View {
 }
 
 #Preview {
-   TimePickerView()
-        
+    struct PreviewWrapper: View {
+        var body: some View {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let viewModel = TasksViewModel(context: container.mainContext)
+
+            return TimePickerView()
+                .modelContainer(container)
+                .environmentObject(viewModel)
+        }
+    }
+
+    return PreviewWrapper()
 }

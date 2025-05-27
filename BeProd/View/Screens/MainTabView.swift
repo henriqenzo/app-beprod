@@ -1,5 +1,6 @@
 
 import SwiftUI
+import SwiftData
 
 struct MainTabView: View {
     var body: some View {
@@ -36,5 +37,17 @@ struct MainTabView: View {
 }
 
 #Preview {
-    MainTabView()
+    struct PreviewWrapper: View {
+        var body: some View {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: UserTask.self, configurations: config)
+            let viewModel = TasksViewModel(context: container.mainContext)
+
+            return MainTabView()
+                .modelContainer(container)
+                .environmentObject(viewModel)
+        }
+    }
+
+    return PreviewWrapper()
 }

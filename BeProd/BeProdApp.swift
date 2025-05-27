@@ -10,14 +10,22 @@ import SwiftData
 
 @main
 struct BeProdApp: App {
+    let container: ModelContainer
+    
+    init() {
+        do {
+            container = try ModelContainer(for: UserTask.self, DailyHistory.self)
+        } catch {
+            fatalError("Falha ao configurar o ModelContainer: \(error)")
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
-           let container = try! ModelContainer(for: UserTask.self)
-           let viewModel = TasksViewModel(context: container.mainContext)
-           
-           MainTabView()
-               .modelContainer(container)
-               .environmentObject(viewModel)
-       }
+            MainTabView()
+                .modelContainer(container)
+                .environmentObject(TasksViewModel(context: container.mainContext))
+                .environmentObject(ConstancyViewModel(context: container.mainContext))
+        }
     }
 }

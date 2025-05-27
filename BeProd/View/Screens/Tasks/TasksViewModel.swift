@@ -16,15 +16,28 @@ class TasksViewModel: ObservableObject {
         
     init(context: ModelContext) {
         self.modelContext = context
+        
+//        UserDefaults.standard.set(
+//            Calendar.current.date(byAdding: .day, value: -1, to: Date()),
+//            forKey: UserDefaults.lastResetDateKey
+//        )
+        
+        checkAndResetTasksIfNeeded()
     }
     
+    let calendar = Calendar.current
+    @Published var currentDay = Calendar.current.startOfDay(for: Date())
+    @Published var selectedDate = Calendar.current.startOfDay(for: Date())
+    
+    // Para fazer testes alterando o dia atual no app
+//    @Published var today = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+
     @Published var segmentSelected = 0
     @Published var showingTimePicker = false
     
     @Published var showingAddTaskModal = false {
        didSet {
            if !showingAddTaskModal {
-               // Sempre que a modal é fechada (de qualquer maneira), reseta o estado de edição
                resetEditingState()
            }
        }
@@ -42,15 +55,50 @@ class TasksViewModel: ObservableObject {
     @Published var editingTask: UserTask?
     
     
+    func checkAndResetTasksIfNeeded() {
+        // Para testar: (descomente)
+//        let fakeDate = calendar.date(byAdding: .day, value: 1, to: Date())!
+//        let today = calendar.startOfDay(for: fakeDate)
         
-    // Função para preparar nova tarefa
+        let lastReset = UserDefaults.standard.object(forKey: UserDefaults.lastResetDateKey) as? Date
+        let lastResetDay = lastReset.map { calendar.startOfDay(for: $0) }
+        
+        guard lastResetDay != currentDay else {
+            return // Já ressetou hoje
+        }
+
+        // Fetch tasks do banco
+        let descriptor = FetchDescriptor<UserTask>()
+        do {
+            let allTasks = try modelContext.fetch(descriptor)
+
+            for task in allTasks {
+                if task.isEventual {
+                    if task.createdDate != nil {
+                        guard let createdDate = task.createdDate else { return }
+                        let createdDateWithoutTime = calendar.startOfDay(for: createdDate)
+                        if createdDateWithoutTime < currentDay {
+                            modelContext.delete(task) // Remove do banco
+                        }
+                    }
+                } else {
+                    task.completed = false // Reseta a conclusão
+                }
+            }
+
+            try modelContext.save()
+            UserDefaults.standard.set(Date(), forKey: UserDefaults.lastResetDateKey)
+        } catch {
+            print("Erro ao resetar tarefas diárias: \(error.localizedDescription)")
+        }
+    }
+    
     func prepareForNewTask() {
         resetEditingState()
         showingTimePicker = false
         showingAddTaskModal = true
     }
     
-    // Função prepara para editar tarefa
     func prepareForEdit(task: UserTask) {
         isEditing = true
         editingTask = task
@@ -64,8 +112,7 @@ class TasksViewModel: ObservableObject {
         showingAddTaskModal = true // Abre Modal
     }
     
-    // Função cria tarefa
-    func addOrEditTask() {
+    func addOrEditTask(for selectedDate: Date) {
         guard !newTaskTitle.isEmpty else { return }
         
         if isEditing, let taskToEdit = editingTask {
@@ -73,28 +120,29 @@ class TasksViewModel: ObservableObject {
             taskToEdit.durationHours = showingTimePicker ? newTaskDurationHours : 0
             taskToEdit.durationMinutes = showingTimePicker ? newTaskDurationMinutes : 0
             taskToEdit.priority = newTaskPriority
-            taskToEdit.completed = completed
-            // Não precisa inserir novamente, já está no contexto
         } else {
+            guard selectedDate >= Calendar.current.startOfDay(for: Date()) else {
+                return
+            }
+            
             let newTask = UserTask(
                 title: newTaskTitle,
                 durationHours: showingTimePicker ? newTaskDurationHours : 0,
                 durationMinutes: showingTimePicker ? newTaskDurationMinutes : 0,
                 priority: newTaskPriority,
                 completed: completed,
-                isEventual: segmentSelected == 1
+                isEventual: segmentSelected == 1,
+                createdDate: segmentSelected == 1 ? selectedDate : nil
             )
             modelContext.insert(newTask)
         }
 
-        // Tenta salvar
         try? modelContext.save()
 
         clearForm()
         showingAddTaskModal = false
     }
 
-    // Função remover tarefa pelo id
     func deleteTask(_ task: UserTask) {
         withAnimation {
             modelContext.delete(task)
@@ -102,7 +150,6 @@ class TasksViewModel: ObservableObject {
         }
     }
     
-    // Função limpa os campos do formulário
     func clearForm() {
         newTaskTitle = ""
         newTaskDurationHours = 0
@@ -123,11 +170,14 @@ class TasksViewModel: ObservableObject {
         try? modelContext.save()
     }
     
-    // Função reseta estado de edição
     func resetEditingState() {
         isEditing = false
         editingTask = nil
         clearForm()
     }
     
+}
+
+extension UserDefaults {
+    static let lastResetDateKey = "lastResetDate"
 }

@@ -6,9 +6,9 @@ struct RoutineTasksView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserTask.sortIndex) private var tasks: [UserTask]
-        
-    @EnvironmentObject var viewModel: TasksViewModel
-    @State var isInEventualView = false
+    
+    @EnvironmentObject var tasksViewModel: TasksViewModel
+    @EnvironmentObject var constancyViewModel: ConstancyViewModel
     
     var body: some View {
         
@@ -25,26 +25,52 @@ struct RoutineTasksView: View {
                     
                     List {
                         ForEach(tasks) { task in
-                            // Renderiza cada tarefa
-                            TaskRowView(task: task, isInEventualView: $isInEventualView)
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        viewModel.deleteTask(task)
-                                    } label: {
-                                        Image(systemName: "trash.fill")
-                                    }
-                                    .tint(.red)
-                                    
-                                    Button {
-                                        viewModel.prepareForEdit(task: task)
-                                    } label: {
-                                        Image(systemName: "pencil").font(.system(size: 26))
-                                    }
-                                    .tint(.gray)
+            
+                            if task.isEventual {
+                                let createdDateWithoutTime = Calendar.current.startOfDay(for: task.createdDate!)
+                                if createdDateWithoutTime == tasksViewModel.currentDay {
+                                    // Renderiza a tarefa
+                                    TaskRowView(task: task)
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) {
+                                                tasksViewModel.deleteTask(task)
+                                            } label: {
+                                                Image(systemName: "trash.fill")
+                                            }
+                                            .tint(.red)
+                                            
+                                            Button {
+                                                tasksViewModel.prepareForEdit(task: task)
+                                            } label: {
+                                                Image(systemName: "pencil").font(.system(size: 26))
+                                            }
+                                            .tint(.gray)
+                                        }
                                 }
+                            } else {
+                                // Renderiza a tarefa
+                                TaskRowView(task: task)
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            tasksViewModel.deleteTask(task)
+                                            constancyViewModel.saveHistory(tasks: tasks)
+                                        } label: {
+                                            Image(systemName: "trash.fill")
+                                        }
+                                        .tint(.red)
+                                        
+                                        Button {
+                                            tasksViewModel.prepareForEdit(task: task)
+                                        } label: {
+                                            Image(systemName: "pencil").font(.system(size: 26))
+                                        }
+                                        .tint(.gray)
+                                    }
+                            }
+                            
                         }
                         .onMove { indices, newOffset in
-                            viewModel.moveTask(tasks, from: indices, to: newOffset)
+                            tasksViewModel.moveTask(tasks, from: indices, to: newOffset)
                         }
                         .scrollContentBackground(.hidden)
                         .listRowBackground(Color.clear)

@@ -40,9 +40,9 @@ struct FocusView: View {
                             .rotationEffect(.degrees(-90))
                             .foregroundStyle(Color("Primary"))
                             .animation(isRunning ? .spring().speed(0.2) : nil)
-                            Text(formattedTime())
-                                .font(.system(size: 48))
-                                .fontWeight(.light)
+                        Text(formattedTime())
+                            .font(.system(size: 48))
+                            .fontWeight(.light)
                         if isPaused {
                             Text("Pausado")
                                 .padding(.top, 80)
