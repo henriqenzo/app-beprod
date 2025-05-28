@@ -18,47 +18,93 @@ struct ConstancyView: View {
             
             VStack {
                 
-                
                 VStack(spacing: 24) {
                     
                     Text("Constância").font(.headline)
                     
-                    VStack {
+                    VStack(spacing: 20) {
                         CustomCalendarView()
+                            .onAppear(perform: resetSelectedMonth)
+                            .padding(.horizontal, 16)
+                        
+                        Divider()
+                            .background(Color.secondary)
+                        
+                        VStack(spacing: 20) {
+                            
+                            Text("Tarefas concluídas (%)").font(.system(size: 16))
+                            
+                            HStack(spacing: 36) {
+                                VStack {
+                                    Circle()
+                                        .frame(width: 30, height: 30)
+                                        .foregroundStyle(Color("Primary"))
+                                    
+                                    Text("80+")
+                                        .font(.system(size: 14))
+                                }
+                                .frame(minWidth: 50)
+                                
+                                VStack {
+                                    Circle()
+                                        .frame(width: 30, height: 30)
+                                        .foregroundStyle(Color("Primary").opacity(0.6))
+                                    
+                                    Text("50-79")
+                                        .font(.system(size: 14))
+                                }
+                                
+                                VStack {
+                                    Circle()
+                                        .frame(width: 30, height: 30)
+                                        .foregroundStyle(Color("Primary").opacity(0.2))
+                                    
+                                    Text("20-49")
+                                        .font(.system(size: 14))
+                                }
+                            }
+                            
+                        }
+                        .padding(.horizontal, 16)
+                        
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 25)
+                    .padding(.vertical, 16)
                     .background(Color("Gray3"))
                     .cornerRadius(10)
                 }
                 
-//                Spacer()
+                Spacer()
                 
-                ScrollView {
-                    if history.isEmpty {
-                        Text("Histórico vazio")
-                            .foregroundStyle(Color.red)
-                    } else {
-                        Text("Tem histórico")
-                            .foregroundStyle(Color.green)
-                        ForEach(history) { historyOfDay in
-                            VStack {
-                                Text("Data: \(historyOfDay.date)")
-                                Text("Completadas: \(historyOfDay.completedTasks)")
-                                Text("Total de tasks: \(historyOfDay.totalTasks)")
-                                Text("\(historyOfDay.percentual)%")
-                                    .foregroundStyle(Color("Primary"))
-                            }
-                        }
-                    }
-                }
-//                .padding(.vertical, 20)
+                // Excluir depois dos testes
+//                ScrollView {
+//                    if history.isEmpty {
+//                        Text("Histórico vazio")
+//                            .foregroundStyle(Color.red)
+//                    } else {
+//                        Text("Tem histórico")
+//                            .foregroundStyle(Color.green)
+//                        ForEach(history) { historyOfDay in
+//                            VStack {
+//                                Text("Data: \(historyOfDay.date)")
+//                                Text("Completadas: \(historyOfDay.completedTasks)")
+//                                Text("Total de tasks: \(historyOfDay.totalTasks)")
+//                                Text("\(historyOfDay.percentual)%")
+//                                    .foregroundStyle(Color("Primary"))
+//                            }
+//                        }
+//                    }
+//                }
                 
             }
             .padding(.horizontal)
             .padding(.top, 8)
+            
         }
        
+    }
+    
+    func resetSelectedMonth() {
+        viewModel.currentMonthDisplayed = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date()))!
     }
 }
 

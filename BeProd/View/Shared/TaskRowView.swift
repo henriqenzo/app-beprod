@@ -55,7 +55,7 @@ struct TaskRowView: View {
                         Image(systemName: task.completed ? "checkmark.square.fill" : "square")
                             .font(.system(size: 26))
                             .foregroundStyle(task.isEventual ? Color("Primary") : Color("Gray"))
-                            .rotationEffect(.degrees(task.completed ? 0 : -180))
+                            .rotationEffect(.degrees(task.completed ? 0 : -90))
                             .scaleEffect(task.completed ? 1.0 : 1.1)
                     }
                     .disabled(tasksViewModel.segmentSelected == 1)

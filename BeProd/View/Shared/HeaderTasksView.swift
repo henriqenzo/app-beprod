@@ -61,8 +61,7 @@ struct HeaderTasksView: View {
                         
                         if viewModel.segmentSelected == 1 {
                             WeekDatePickerView()
-                                .onAppear(perform: resetSelectedDate
-                                )
+                                .onAppear(perform: resetSelectedDate)
                         }
                         
                     }

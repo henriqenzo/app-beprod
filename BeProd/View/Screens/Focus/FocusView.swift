@@ -3,8 +3,8 @@ import SwiftUI
 
 struct FocusView: View {
     
-    @State private var focusDuration: TimeInterval = 25 * 60 // Convertendo para segundos
-    @State private var timeRemaining: TimeInterval = 25 * 60
+    @State private var focusDuration: TimeInterval = 0.1 * 60 // Convertendo para segundos
+    @State private var timeRemaining: TimeInterval = 0.1 * 60
     @State private var timer: Timer?
     @State private var isRunning: Bool = false
     @State private var isPaused: Bool = false
@@ -39,7 +39,7 @@ struct FocusView: View {
                             .frame(width: 284, height: 284)
                             .rotationEffect(.degrees(-90))
                             .foregroundStyle(Color("Primary"))
-                            .animation(isRunning ? .spring().speed(0.2) : nil)
+                            .animation(isRunning ? .spring().speed(0.2) : nil, value: timeRemaining)
                         Text(formattedTime())
                             .font(.system(size: 48))
                             .fontWeight(.light)
@@ -145,6 +145,7 @@ struct FocusView: View {
     func timerFinished() {
         isRunning = false
         isPaused = false
+        timeRemaining = focusDuration
         timer?.invalidate()
         // Aqui você pode adicionar algum feedback quando o timer terminar
     }
